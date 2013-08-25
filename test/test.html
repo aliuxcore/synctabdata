@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Examples</title>
+    <meta name="description" content="">
+        <meta name="keywords" content="">
+<link href="" rel="stylesheet">
+<style type="text/css">
+
+	.todolistContainer{
+		border: 1px solid #444;
+		border-radius: 6px;
+		width: 300px;
+        margin: 100px;
+        padding: 20px;
+	}
+
+	.todolistContainer ul li{
+		list-style: none;
+	}
+	.todolistContainer li{
+		background-color: pink;
+		height: 30px;
+		margin: 4px; 0px;
+	}
+</style>
+</head>
+
+<!--
+
+需求：
+同步多个tab之间的信息
+
+场景：
+使用setInterval来拉数据，使用localStorage来存储数据，并使用storage event来保证
+tab时间的数据是同步的
+
+
+问题：
+Tengine下，如何配置php运行环境(on mac)
+
+
+-->
+<body>
+
+
+<div class="todolistContainer">
+	<input type="text" id="addtasktxt"/> <button id="addtask">Task</button>
+	<ul class="todolist">
+		<li id="task"></li>
+	</ul>
+</div>
+
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script type="text/javascript">
+
+(function(win,undefined){
+		win["syntabdata"]= {
+			//__cachekey: location.hostname+"__synctabdata",
+			lastIndexOfArray: function(arr,str) {
+				for(var i=0; i<arr;i++){
+				 	if(arr[i]==str){
+				 		return 1;
+				 	}
+				}
+				return -1;
+			},
+			pub: function (subject,message) {
+				//fix the IE8 missing storageEvent.key, we store the key in the messge
+				/*if(this.isIE8()) {
+					message={
+						subject: message
+					};
+					message=JSON.stringify(message);
+				}*/
+				message=JSON.stringify(message);
+				localStorage.setItem(subject,message);
+
+				/*var keystr=localStorage.getItem(this.__cachekey),
+					keys=keystr.split(",");
+
+				//put the subject into local storage cache if no subject before
+				if(this.lastIndexOfArray(keys,subject)==-1) {
+					!!keystr?localStorage.setItem(keystr+","+subject):localStorage.setItem(this.__cachekey,subject);
+				}*/
+
+			},
+
+			sub: function (subject,fcb) {
+				$(window).on('storage', function(e) {
+					var key=e.originalEvent.key;
+					if(key==subject) {
+						fcb.apply(null,[subject,localStorage.getItem(subject)]);
+					}
+				});
+
+				// IE8 fix missing storageEvent.key
+			    if (this.isIE8()) {
+			        $(document).on('storage', function(e) {
+			        	fcb.apply(null,[subject,localStorage.getItem(subject)]);
+			        });
+			    }
+			},
+			isIE8: function() {
+				if ('onstorage' in document) {
+					return true;
+				}
+				return false;
+			},
+			init: function() {
+
+				//location.hostname
+				/*if(!!localStorage.getItem(this.__cachekey)){
+					localStorage.setItem(this.__cachekey,"");
+				}*/
+			}
+		}
+	})(window,undefined);
+
+
+
+    //how to use sync tab data
+
+	(function(hi){
+
+		function processData(data) {
+			$("#task").html("data coming is: "+data);
+
+		}
+
+		$("#addtask").on("click",function(){
+			console.info(hi);
+			var newtask=$("#addtasktxt").val();
+			console.info("newtask:",newtask);
+			/*var task=localStorage.getItem("task");
+			if(!task) task=newtask;
+			task=!!newtask?newtask:task;
+			localStorage.setItem("task",task);
+			task=localStorage.getItem("task");
+			console.log(task);*/
+			$("#task").html(newtask);
+			syntabdata.pub("task",newtask);
+
+		});
+
+
+		syntabdata.sub("task",function(subject,data) {
+			console.log("subject:",subject);
+			console.log("data:",data);
+			processData(data);
+		});
+
+		/*var __interval=setInterval(function() {
+
+	    },3000);
+
+		var __timeout;
+		$(window).on('storage', function(e) {
+			console.info(e);
+			//clearTimeout(__timeout);
+			__timeout=setTimeout(function() {
+				debugger;
+				console.log("++++++++w3c++++++");
+			},1000);
+		});
+
+
+		// IE8 fix missing storageEvent.key
+	    if ('onstorage' in document) {
+	        $(document).on('storage', function(e) {
+	        	    debugger;
+	        		console.log("++++++ie ++++++++");
+	        });
+	    }*/
+
+	})("helloworld");
+
+</script>
+</body>
+</html>
